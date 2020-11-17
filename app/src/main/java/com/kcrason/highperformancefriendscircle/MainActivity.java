@@ -3,6 +3,7 @@ package com.kcrason.highperformancefriendscircle;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.graphics.PorterDuff;
 
@@ -15,7 +16,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
@@ -45,7 +50,10 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     private FriendCircleAdapter mFriendCircleAdapter;
     private ImageWatcher mImageWatcher;
     private EmojiPanelView mEmojiPanelView;
-    private ImageView iv_camera;
+    private ImageView iv_camera, iv_back;
+    private RelativeLayout rl_1;
+    private TextView tv_title;
+    private int bar_type = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,18 +63,14 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 //        if (1 + 6 > 0) {
 //            return;
 //        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Window window = getWindow();
-            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(Color.TRANSPARENT);
-        }
+        changeBarTransparent();
 
         iv_camera = (ImageView) findViewById(R.id.iv_camera);
-
+        tv_title = (TextView) findViewById(R.id.tv_title);
+        iv_back = (ImageView) findViewById(R.id.img_back);
+        rl_1 = (RelativeLayout) findViewById(R.id.rl_1);
         iv_camera.setColorFilter(Color.parseColor("#FFFFFF"), PorterDuff.Mode.SRC_IN);
+        iv_back.setColorFilter(Color.parseColor("#FFFFFF"), PorterDuff.Mode.SRC_IN);
 
 //方法效果清除
 
@@ -104,35 +108,74 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         recyclerView.setAdapter(mFriendCircleAdapter);
 
 
-//        int[] position = new int[2];
-//        int statusBarHeight = getStatusBarHeight(this);
-//        int dividerHeight = dip2px(this, 30);
-//        int topBarHeight = dip2px(this, 45);
-//        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-//            @Override
-//            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-////                headerView.getLocationOnScreen(position);
-////                Log.i("roy", "宽高：" + headerView.getWidth() + "/" + headerView.getHeight()
-////                        + "，滑动：" + position[0] + "/" + position[1]);
-////                // 判断是否更改背景
-//                if (position[1] < 0) {
-//                    int offset = headerView.getHeight() + position[1];
-//                    if (offset < statusBarHeight + topBarHeight) {// TopBar灰色
-//                        vg_top_bar.setBackgroundColor(Color.parseColor("#cbcaca"));
-//                        tv_top_bar_title.setTextColor(Color.parseColor("#666666"));
-//                    } else if (offset > statusBarHeight + topBarHeight
-//                            && offset <= statusBarHeight + topBarHeight + dividerHeight) {// TopBar渐变色
-//                        int x = 255 - 255 * (offset - statusBarHeight - topBarHeight) / dividerHeight;
-//                        String hexStr = numToHex16(x);
-//                        vg_top_bar.setBackgroundColor(Color.parseColor("#" + hexStr + "cbcaca"));
-//                        tv_top_bar_title.setTextColor(Color.parseColor("#" + hexStr + "666666"));
-//                    } else {// TopBar透明
-//                        vg_top_bar.setBackgroundColor(Color.TRANSPARENT);
-//                        tv_top_bar_title.setTextColor(Color.TRANSPARENT);
-//                    }
+        int[] position = new int[2];
+        int statusBarHeight = getStatusBarHeight(this);
+        int dividerHeight = dip2px(this, 30);
+        int topBarHeight = dip2px(this, 68);
+        int headerHeight = dip2px(this, 280);
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            int mmRvScrollY = 0; // 列表滑动距离
+
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                rl_1.getLocationOnScreen(position);
+                mmRvScrollY += dy;
+
+                // 判断是否更改背景
+//                if (mmRvScrollY < 0) {
+                int offset = headerHeight - mmRvScrollY;
+                Log.i("roy", "宽高：" + rl_1.getWidth() + "/" + headerHeight
+                        + "，滑动：" + mmRvScrollY + " offset:" + offset + " / " + (statusBarHeight + topBarHeight));
+                if (offset < statusBarHeight + topBarHeight) {
+                    if (bar_type != 1) {
+                        bar_type = 1;
+                        changeBarColor(Color.parseColor("#ffcbcaca"));
+                        rl_1.setBackgroundColor(Color.parseColor("#cbcaca"));
+                        tv_title.setTextColor(Color.parseColor("#222230"));
+                        iv_camera.setColorFilter(Color.parseColor("#222230"), PorterDuff.Mode.SRC_IN);
+                        iv_back.setColorFilter(Color.parseColor("#222230"), PorterDuff.Mode.SRC_IN);
+                    }
+
+                } else if (offset > statusBarHeight + topBarHeight && offset <= statusBarHeight + topBarHeight + dividerHeight) {
+                    int x = 255 - 255 * (offset - statusBarHeight - topBarHeight) / dividerHeight;
+                    bar_type = 2;
+                    Log.i("roy", "x：" + x);
+                    String hexStr = numToHex16(x);
+                    rl_1.setBackgroundColor(Color.parseColor("#" + hexStr + "cbcaca"));
+                    tv_title.setTextColor(Color.parseColor("#" + hexStr + "222230"));
+                    changeBarColor(Color.parseColor("#" + hexStr + "cbcaca"));
+                    iv_camera.setColorFilter(Color.parseColor("#" + hexStr + "222230"), PorterDuff.Mode.SRC_IN);
+                    iv_back.setColorFilter(Color.parseColor("#" + hexStr + "222230"), PorterDuff.Mode.SRC_IN);
+                } else {
+                    if (bar_type != 0) {
+                        bar_type = 0;
+                        changeBarTransparent();
+                        rl_1.setBackgroundColor(Color.TRANSPARENT);
+                        tv_title.setTextColor(Color.TRANSPARENT);
+                        iv_camera.setColorFilter(Color.parseColor("#FFFFFF"), PorterDuff.Mode.SRC_IN);
+                        iv_back.setColorFilter(Color.parseColor("#FFFFFF"), PorterDuff.Mode.SRC_IN);
+                    }
+
+                }
+
+//                if (offset < statusBarHeight + topBarHeight) {// TopBar灰色
+//                    rl_1.setBackgroundColor(Color.parseColor("#cbcaca"));
+//                    tv_title.setTextColor(Color.parseColor("#666666"));
+//                } else if (offset > statusBarHeight + topBarHeight
+//                        && offset <= statusBarHeight + topBarHeight + dividerHeight) {// TopBar渐变色
+//                    int x = 255 - 255 * (offset - statusBarHeight - topBarHeight) / dividerHeight;
+//                    String hexStr = numToHex16(x);
+//                    rl_1.setBackgroundColor(Color.parseColor("#" + hexStr + "cbcaca"));
+//                    tv_title.setTextColor(Color.parseColor("#" + hexStr + "666666"));
+//                } else {// TopBar透明
+//                    rl_1.setBackgroundColor(Color.TRANSPARENT);
+//                    tv_title.setTextColor(Color.TRANSPARENT);
 //                }
+
+            }
+
 //            }
-//        });
+        });
 
 
         mImageWatcher.setTranslucentStatus(Utils.calcStatusBarHeight(this));
@@ -216,4 +259,28 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     public static String numToHex16(int b) {
         return String.format("%02x", b);
     }
+
+
+    private void changeBarTransparent() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Window window = getWindow();
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(Color.TRANSPARENT);
+        }
+    }
+
+    private void changeBarColor(int color) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Window window = getWindow();
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(color);
+        }
+    }
+
 }
